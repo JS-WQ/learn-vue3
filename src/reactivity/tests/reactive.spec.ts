@@ -1,4 +1,4 @@
-import { isReactive, isReadonly, reactive, readonly, shallowReadonly } from "../reactive";
+import { isProxy, isReactive, isReadonly, reactive, readonly, shallowReadonly } from "../reactive";
 describe("reactive", () => {
   it("happy path", () => {
     const original = { foo: 1 };
@@ -59,4 +59,14 @@ describe("reactive", () => {
     expect(isReadonly(props)).toBe(true);
     expect(isReadonly(props.n)).toBe(false);
   });
+    it("isProxy", () => {
+      const original = {
+        nested: { foo: 1 },
+        array: [{ bar: 2 }],
+      };
+      const p1 = readonly(original);
+      const p2 = reactive(original);
+      expect(isProxy(p1)).toBe(true);
+      expect(isProxy(p2)).toBe(true);
+    });
 });

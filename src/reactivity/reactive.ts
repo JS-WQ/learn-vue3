@@ -32,3 +32,7 @@ export function isReadonly(value: any) {
   //思路：读取一个特定的值，如果能进入proxy，再get(proxy)中对这个特定值进行判断；如果进不了，则直接返回false
   return !!value[ReactiveFlags.IS_READONLY];
 }
+
+export function isProxy(value:any){
+    return isReactive(value) || isReadonly(value)
+}
