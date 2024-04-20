@@ -1,7 +1,10 @@
 import { track, trigger } from "./effect";
 import { ReactiveFlags, reactive, readonly } from "./reactive";
 
-function createGetter(isReadonly: boolean = false) {
+function createGetter(
+  isReadonly: boolean = false,
+  isShallow: boolean = false
+) {
   return function get(target: any, key: any) {
     const res = Reflect.get(target, key);
     if (key === ReactiveFlags.IS_REACTIVE) {
@@ -10,10 +13,16 @@ function createGetter(isReadonly: boolean = false) {
     if (key === ReactiveFlags.IS_READONLY) {
       return isReadonly;
     }
+
     if (!isReadonly) {
       //如果不是只读的，那么就需要依赖收集
       track(target, key);
     }
+
+    if(isShallow){
+        return res
+    }
+
     if (typeof res === "object" && res !== null) {
       //处理嵌套的问题，使得target的每一层都经过了代理处理
       return isReadonly ? readonly(res) : reactive(res);
@@ -41,6 +50,14 @@ export const mutableHandlers = {
 const readonlyGet = createGetter(true);
 export const readonlyHandlers = {
   get: readonlyGet,
+  set(target: any, key: any, newValue: any) {
+    console.warn(`key:${key}是只读属性，无法被修改`);
+    return true;
+  },
+};
+const shallowReadonlyGet = createGetter(true,true);
+export const shallowReadonlyHandlers = {
+  get: shallowReadonlyGet,
   set(target: any, key: any, newValue: any) {
     console.warn(`key:${key}是只读属性，无法被修改`);
     return true;
