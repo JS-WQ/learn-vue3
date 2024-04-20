@@ -1,6 +1,6 @@
 class ReactiveEffect {
   private _fn: Function;
-  constructor(fn: Function) {
+  constructor(fn: Function, public scheduler?:Function) {
     this._fn = fn;
   }
   run() {
@@ -11,9 +11,16 @@ class ReactiveEffect {
 }
 
 let activeEffect: any; //正在执行的effect
-export function effect(fn: Function) {
+export function effect(fn: Function, options: any = {}) {
   //effect执行后会把fn返回出去
-  const _effect = new ReactiveEffect(fn);
+
+  /**
+   * scheduler作用：当effect带有scheduler的时候,第一次默认会执行run;
+   * 当响应式对象更新后，不会再次执行run,而是会执行scheduler;
+   */
+
+  const scheduler: Function = options.scheduler;
+  const _effect = new ReactiveEffect(fn, scheduler);
   _effect.run();
   return _effect.run.bind(_effect);
 }
@@ -47,6 +54,10 @@ export function trigger(target: any, key: any) {
   let dep = depsMap.get(key);
 
   for (const _effect of dep) {
-    _effect.run();
+    if (_effect.scheduler) {
+      _effect.scheduler();
+    } else {
+      _effect.run();
+    }
   }
 }
