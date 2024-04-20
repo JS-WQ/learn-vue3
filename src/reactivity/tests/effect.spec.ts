@@ -14,4 +14,16 @@ describe("effect", () => {
     user.age++;
     expect(nextAge).toBe(12);
   });
+  it("runner path", () => {
+    //effect执行完后会把fn返回出去，赋值给runner,执行runner就是再次执行fn,同时执行fn也会将值返回出去
+    let foo = 10;
+    let runner = effect(() => {
+      foo++;
+      return "foo";
+    });
+    expect(foo).toBe(11);
+    let r = runner();
+    expect(foo).toBe(12);
+    expect(r).toBe("foo");
+  });
 });
