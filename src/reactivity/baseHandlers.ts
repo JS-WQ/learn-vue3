@@ -1,5 +1,5 @@
 import { track, trigger } from "./effect";
-import { ReactiveFlags } from "./reactive";
+import { ReactiveFlags, reactive, readonly } from "./reactive";
 
 function createGetter(isReadonly: boolean = false) {
   return function get(target: any, key: any) {
@@ -13,6 +13,10 @@ function createGetter(isReadonly: boolean = false) {
     if (!isReadonly) {
       //如果不是只读的，那么就需要依赖收集
       track(target, key);
+    }
+    if (typeof res === "object" && res !== null) {
+      //处理嵌套的问题，使得target的每一层都经过了代理处理
+      return isReadonly ? readonly(res) : reactive(res);
     }
     return res;
   };

@@ -34,4 +34,24 @@ describe("reactive", () => {
     expect(isReadonly(observed2)).toBe(false);
     expect(isReadonly(original)).toBe(false);
   });
+  it("nested reactive", () => {
+    const original = {
+      nested: { foo: 1 },
+      array: [{ bar: 2 }],
+    };
+    const observed = reactive(original);
+    expect(isReactive(observed.nested)).toBe(true);
+    expect(isReactive(observed.array)).toBe(true);
+    expect(isReactive(observed.array[0])).toBe(true);
+  });
+  it("nested readonly", () => {
+    const original = {
+      nested: { foo: 1 },
+      array: [{ bar: 2 }],
+    };
+    const observed = readonly(original);
+    expect(isReadonly(observed.nested)).toBe(true);
+    expect(isReadonly(observed.array)).toBe(true);
+    expect(isReadonly(observed.array[0])).toBe(true);
+  });
 });
