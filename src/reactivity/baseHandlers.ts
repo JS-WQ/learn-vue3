@@ -1,0 +1,37 @@
+import { track, trigger } from "./effect";
+
+function createGetter(isReadonly: boolean = false) {
+  return function get(target: any, key: any) {
+    const res = Reflect.get(target, key);
+    if (!isReadonly) {
+      //如果不是只读的，那么就需要依赖收集
+      track(target, key);
+    }
+    return res;
+  };
+}
+
+function createSetter() {
+  return function set(target: any, key: any, newValue: any) {
+    const res = Reflect.set(target, key, newValue);
+    //依赖触发
+    trigger(target, key);
+    return res;
+  };
+}
+
+const get = createGetter();
+const set = createSetter();
+export const mutableHandlers = {
+  get: get,
+  set: set,
+};
+
+const readonlyGet = createGetter(true);
+export const readonlyHandlers = {
+  get: readonlyGet,
+  set(target: any, key: any, newValue: any) {
+    console.warn(`key:${key}是只读属性，无法被修改`);
+    return true;
+  },
+};
