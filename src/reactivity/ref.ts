@@ -5,11 +5,13 @@ import { reactive } from "./reactive";
 class RefImpl {
   private _value: any;
   dep: Set<unknown>;
-    private _rawValue: any;
+  private _rawValue: any;
+  private __v_isRef: boolean;
   constructor(value: any) {
-    this._rawValue= value;
+    this._rawValue = value;
     this._value = isObj(value) ? reactive(value) : value;
     this.dep = new Set();
+    this.__v_isRef = true;
   }
   get value() {
     //进行依赖收集
@@ -29,4 +31,10 @@ class RefImpl {
 }
 export function ref(raw: any) {
   return new RefImpl(raw);
+}
+export function isRef(raw: any) {
+  return !!raw.__v_isRef;
+}
+export function unRef(raw: any) {
+  return isRef(raw) ? raw.value : raw;
 }
