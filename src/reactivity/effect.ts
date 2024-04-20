@@ -3,32 +3,42 @@ class ReactiveEffect {
   deps = [];
   scheduler: any;
   onStop: any;
-  isStoped: boolean;
+  active: boolean;
   constructor(fn: Function, scheduler?: any, onStop?: any) {
     this._fn = fn;
     this.scheduler = scheduler;
     this.onStop = onStop;
-    this.isStoped = false;
+    this.active = true;
   }
   run() {
+    if (!this.active) {
+      //如果经过了stop(runner),那么久不需要再次进行收集了
+      return this._fn();
+    }
+    //函数this._fn执行前打开收集的指定；执行完毕后关上收集的指令；
+    //同时抛出this._fn的返回值
     activeEffect = this;
-    let res = this._fn();
+    shouldTrack = true;
+    const res = this._fn();
+    shouldTrack = false;
     return res;
   }
   stop() {
     //删除dep中保存的this(_effect),这样当依赖触发的时候，fn就不会被执行
-    if (!this.isStoped) {
+    if (this.active) {
       //优化：默认没有被清除过，当清除一次后赋值为true;这样多次调用stop也只会执行一次。
       this.deps.forEach((dep: any) => {
         dep.delete(this);
       });
+      this.deps.length = 0;
       this.onStop && this.onStop(); //当清理完成后如果有回调，就执行回调
-      this.isStoped = true;
+      this.active = false;
     }
   }
 }
 
 let activeEffect: any; //正在执行的effect
+let shouldTrack: any; //是否应该收集依赖
 export function effect(fn: Function, options: any = {}) {
   //effect执行后会把fn返回出去
 
@@ -57,6 +67,8 @@ export function track(target: any, key: any) {
   //依赖收集：其实就是收集 "_effect"
   //target => key => dep(存放_effect)
 
+  if (!isTracking()) return;
+
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     depsMap = new Map();
@@ -71,7 +83,11 @@ export function track(target: any, key: any) {
 
   //当activeEffect存在的时候，说明此时正处于effect函数执行阶段，dep就需要收集_effect
   //同时effect也需要收集dep
-  activeEffect && dep.add(activeEffect) && activeEffect.deps.push(dep);
+  dep.add(activeEffect) && activeEffect.deps.push(dep);
+}
+
+function isTracking(){
+    return shouldTrack && activeEffect !== undefined
 }
 
 export function trigger(target: any, key: any) {

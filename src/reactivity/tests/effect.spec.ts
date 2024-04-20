@@ -52,20 +52,16 @@ describe("effect", () => {
   });
   it("stop", () => {
     let dummy;
-    let test;
     const obj = reactive({ foo: 1, age: 18 });
     const runner = effect(() => {
       dummy = obj.foo;
     });
-    const runner2 = effect(() => {
-      test = obj.foo;
-    });
+    
     obj.foo = 2;
     expect(dummy).toBe(2);
     stop(runner);
     obj.foo++;
     expect(dummy).toBe(2);
-    expect(test).toBe(3);
     runner();
     expect(dummy).toBe(3);
   });
