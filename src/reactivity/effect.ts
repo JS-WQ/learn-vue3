@@ -1,4 +1,4 @@
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn: Function;
   deps = [];
   scheduler: any;
