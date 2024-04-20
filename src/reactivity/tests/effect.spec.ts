@@ -1,5 +1,5 @@
 import { reactive } from "../reactive";
-import { effect } from "../effect";
+import { effect, stop } from "../effect";
 
 describe("effect", () => {
   it("happy path", () => {
@@ -49,5 +49,37 @@ describe("effect", () => {
     expect(dummy).toBe(1);
     run();
     expect(dummy).toBe(2);
+  });
+  it("stop", () => {
+    let dummy;
+    let test;
+    const obj = reactive({ foo: 1, age: 18 });
+    const runner = effect(() => {
+      dummy = obj.foo;
+    });
+    const runner2 = effect(() => {
+      test = obj.foo;
+    });
+    obj.foo = 2;
+    expect(dummy).toBe(2);
+    stop(runner);
+    obj.foo++;
+    expect(dummy).toBe(2);
+    expect(test).toBe(3);
+    runner();
+    expect(dummy).toBe(3);
+  });
+  it("onStop", () => {
+    const obj = reactive({ foo: 1 });
+    const onStop = jest.fn();
+    let dummy;
+    const runner = effect(
+      () => {
+        dummy = obj.foo;
+      },
+      { onStop }
+    );
+    stop(runner);
+    expect(onStop).toHaveBeenCalledTimes(1);
   });
 });
