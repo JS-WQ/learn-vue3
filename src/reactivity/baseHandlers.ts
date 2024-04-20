@@ -1,3 +1,4 @@
+import { isObj } from "../shared";
 import { track, trigger } from "./effect";
 import { ReactiveFlags, reactive, readonly } from "./reactive";
 
@@ -23,7 +24,7 @@ function createGetter(
         return res
     }
 
-    if (typeof res === "object" && res !== null) {
+    if (isObj(res)) {
       //处理嵌套的问题，使得target的每一层都经过了代理处理
       return isReadonly ? readonly(res) : reactive(res);
     }

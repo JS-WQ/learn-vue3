@@ -83,11 +83,16 @@ export function track(target: any, key: any) {
 
   //当activeEffect存在的时候，说明此时正处于effect函数执行阶段，dep就需要收集_effect
   //同时effect也需要收集dep
-  dep.add(activeEffect) && activeEffect.deps.push(dep);
+  trackEffects(dep);
 }
 
-function isTracking(){
-    return shouldTrack && activeEffect !== undefined
+export function trackEffects(dep: any) {
+  dep.add(activeEffect);
+  activeEffect.deps.push(dep);
+}
+
+export function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
 }
 
 export function trigger(target: any, key: any) {
@@ -97,6 +102,10 @@ export function trigger(target: any, key: any) {
   let depsMap = targetMap.get(target);
   let dep = depsMap.get(key);
 
+  triggerEffects(dep);
+}
+
+export function triggerEffects(dep: any) {
   for (const _effect of dep) {
     if (_effect.scheduler) {
       _effect.scheduler();

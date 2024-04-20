@@ -1,4 +1,13 @@
-import { isProxy, isReactive, isReadonly, reactive, readonly, shallowReadonly } from "../reactive";
+import { effect } from "../effect";
+import {
+  isProxy,
+  isReactive,
+  isReadonly,
+  reactive,
+  readonly,
+  shallowReadonly,
+} from "../reactive";
+import { ref } from "../ref";
 describe("reactive", () => {
   it("happy path", () => {
     const original = { foo: 1 };
@@ -59,14 +68,45 @@ describe("reactive", () => {
     expect(isReadonly(props)).toBe(true);
     expect(isReadonly(props.n)).toBe(false);
   });
-    it("isProxy", () => {
-      const original = {
-        nested: { foo: 1 },
-        array: [{ bar: 2 }],
-      };
-      const p1 = readonly(original);
-      const p2 = reactive(original);
-      expect(isProxy(p1)).toBe(true);
-      expect(isProxy(p2)).toBe(true);
+  it("isProxy", () => {
+    const original = {
+      nested: { foo: 1 },
+      array: [{ bar: 2 }],
+    };
+    const p1 = readonly(original);
+    const p2 = reactive(original);
+    expect(isProxy(p1)).toBe(true);
+    expect(isProxy(p2)).toBe(true);
+  });
+  it("ref", () => {
+    const a = ref(1);
+    expect(a.value).toBe(1);
+    let dummy;
+    let calls = 0;
+    effect(() => {
+      calls++;
+      dummy = a.value;
     });
+
+    expect(calls).toBe(1);
+    expect(dummy).toBe(1);
+    a.value = 2;
+    expect(calls).toBe(2);
+    expect(dummy).toBe(2);
+    a.value = 2;
+    expect(calls).toBe(2);
+    expect(dummy).toBe(2);
+  });
+  it("nested ref", () => {
+    const a = ref({
+      count: 1,
+    });
+    let dummy;
+    effect(() => {
+      dummy = a.value.count;
+    });
+    expect(dummy).toBe(1);
+    a.value.count = 2;
+    expect(dummy).toBe(2);
+  });
 });
