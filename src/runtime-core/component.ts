@@ -1,8 +1,11 @@
+import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
+
 //创建组件实例
 export function createComponentInstance(vnode: any) {
   const component = {
     vnode, //组件的虚拟节点信息
     type: vnode.type, //如果是processComponent，此时的type就是component信息
+    setupState:{}, //存放setup的返回值
   };
   return component;
 }
@@ -17,6 +20,9 @@ export function setupComponent(instance: any) {
 
 //初始化有状态的组件信息(setup的返回值)
 function setupStatefulComponent(instance: any) {
+  
+  instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
+    
   const component = instance.type;
   const { setup } = component;
   if (setup) {

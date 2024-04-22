@@ -2,10 +2,16 @@ import { h } from '../../lib/guide-mini-vue.esm.js'
 export const App = {
     name: "App",
     render() {
-        return h("div", { id: "boxId", class: ['box', 'active'] }, [
-            h('p', {}, "我是p1"),
-            h('p', {}, "我是p2"),
-        ])
+        window.self = this;
+        return h(
+            "div",
+            { id: "boxId", class: ['box', 'active'] },
+            `hi, mini-vue: ${this.msg}`,
+            // [
+            //     h('p', {}, "我是p1"),
+            //     h('p', {}, "我是p2"),
+            // ]
+        )
     },
     setup() {
         return {

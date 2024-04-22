@@ -29,11 +29,12 @@ function mountComponent(vnode: any, container: any) {
   //初始化组件信息
   setupComponent(instance);
   //调用render,生成组件vnode
-  setupRenderEffect(instance, container);
+  setupRenderEffect(instance,vnode, container);
 }
-function setupRenderEffect(instance: any, container: any) {
-  const subTree = instance.render();
+function setupRenderEffect(instance: any,vnode:any, container: any) {
+  const subTree = instance.render.call(instance.proxy);
   patch(subTree, container);
+  vnode.el = subTree.el;
 }
 //更新组件
 function updateComponent() {}
@@ -46,7 +47,7 @@ function processElement(vnode: any, container: any) {
 //创建element
 function mountElement(vnode: any, container: any) {
   const { type, props, children } = vnode;
-  let el = document.createElement(type);
+  let el = (vnode.el = document.createElement(type));
 
   for (const key in props) {
     el.setAttribute(key, props[key]);
@@ -55,7 +56,7 @@ function mountElement(vnode: any, container: any) {
     el.textContent = children;
   } else if (Array.isArray(children)) {
     //如果children是数组
-    mountChildren(vnode,el)
+    mountChildren(vnode, el);
   }
   container.append(el);
 }
