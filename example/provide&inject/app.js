@@ -8,6 +8,7 @@ const Provider = {
     },
     render() {
         return h("div", {}, [h("p", {}, "Provider"), h(Provider2)])
+        // return h("div", {}, [h("p", {}, "Provider")])
     }
 }
 
@@ -30,7 +31,7 @@ const Consumer = {
     setup() {
         const foo = inject("foo");
         const bar = inject("bar");
-        const baz = inject("baz","default baz")
+        const baz = inject("baz", "default baz")
         return {
             foo,
             bar,

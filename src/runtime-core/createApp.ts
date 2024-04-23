@@ -1,14 +1,14 @@
 import { render } from "./renderer";
-import { createVNode } from "./vnode"
+import { createVNode } from "./vnode";
 
-export function createApp(rootComponent:any){
-    return {
-        mount(rootContainer:any){
-            //此时所有的操作都是基于vnode,所有需要先转换成vnode
-            const vnode = createVNode(rootComponent)
-            render(vnode, rootContainer);
-        }
-    }
+export function createApp(rootComponent: any) {
+  return {
+    mount(rootContainer: any) {
+      //此时所有的操作都是基于vnode,所有需要先转换成vnode
+      const vnode = createVNode(rootComponent);
+      render(vnode, rootContainer, null);
+    },
+  };
 }
 /**
  * vue初始化函数基本调用路线：

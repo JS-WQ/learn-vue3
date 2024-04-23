@@ -5,13 +5,15 @@ import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
 
 //创建组件实例
-export function createComponentInstance(vnode: any) {
+export function createComponentInstance(vnode: any, parentComponent: any) {
   const component = {
     vnode, //组件的虚拟节点信息
     type: vnode.type, //如果是processComponent，此时的type就是component信息
     setupState: {}, //存放setup的返回值
     props: {}, //存放组件的props
     slots: {}, //存放组件的slots
+    provides: parentComponent ? parentComponent.provides : {}, //存放组件的provides
+    parent: parentComponent, //存放当前组件的父组件
     emit: (key: string) => {}, //emit调用函数
   };
   component.emit = emit.bind(null, component);
