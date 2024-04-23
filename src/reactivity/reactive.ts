@@ -1,5 +1,10 @@
 import { track, trigger } from "./effect";
-import { mutableHandlers, readonlyHandlers, shallowReadonlyHandlers } from "./baseHandlers";
+import {
+  mutableHandlers,
+  readonlyHandlers,
+  shallowReadonlyHandlers,
+} from "./baseHandlers";
+import { isObj } from "../shared";
 
 export const enum ReactiveFlags {
   IS_REACTIVE = "__v_isReactive",
@@ -21,6 +26,10 @@ export function shallowReadonly(raw: any) {
 }
 
 function createActiveObject(raw: any, handlers: any) {
+  if (!isObj(raw)) {
+    console.warn(`target: ${raw} 必须是对象！`);
+    return raw;
+  }
   return new Proxy(raw, handlers);
 }
 
@@ -33,6 +42,6 @@ export function isReadonly(value: any) {
   return !!value[ReactiveFlags.IS_READONLY];
 }
 
-export function isProxy(value:any){
-    return isReactive(value) || isReadonly(value)
+export function isProxy(value: any) {
+  return isReactive(value) || isReadonly(value);
 }

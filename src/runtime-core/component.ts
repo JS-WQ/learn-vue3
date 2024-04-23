@@ -1,3 +1,5 @@
+import { shallowReadonly } from "../reactivity/reactive";
+import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 
 //创建组件实例
@@ -5,7 +7,8 @@ export function createComponentInstance(vnode: any) {
   const component = {
     vnode, //组件的虚拟节点信息
     type: vnode.type, //如果是processComponent，此时的type就是component信息
-    setupState:{}, //存放setup的返回值
+    setupState: {}, //存放setup的返回值
+    props: {}, //存放组件的props
   };
   return component;
 }
@@ -13,20 +16,21 @@ export function createComponentInstance(vnode: any) {
 //初始化组件信息
 export function setupComponent(instance: any) {
   //初始化组件的props
+  initProps(instance, instance.vnode.props);
   //初始化组件的slots
   //初始化有状态的组件信息（组件的返回值，或者说是setup函数的返回值）
   setupStatefulComponent(instance);
 }
 
+
 //初始化有状态的组件信息(setup的返回值)
 function setupStatefulComponent(instance: any) {
-  
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
-    
+
   const component = instance.type;
   const { setup } = component;
   if (setup) {
-    const setupResult = setup();
+    const setupResult = setup(shallowReadonly(instance.props)); //用shallowReadonly包裹props,实现只读功能
     handleSetupResult(instance, setupResult);
   }
 }
@@ -42,8 +46,8 @@ function handleSetupResult(instance: any, setupResult: any) {
 }
 //处理render渲染函数
 function finishComponentSetup(instance: any) {
-    const component = instance.type;
-    if(component.render){
-        instance.render = component.render
-    }
+  const component = instance.type;
+  if (component.render) {
+    instance.render = component.render;
+  }
 }
