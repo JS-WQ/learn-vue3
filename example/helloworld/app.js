@@ -5,7 +5,11 @@ export const App = {
         window.self = this;
         return h(
             "div",
-            { id: "boxId", class: ['box', 'active'] },
+            {
+                id: "boxId", class: ['box', 'active'], onClick: function () {
+                    console.log('click handler')
+                }
+            },
             `hi, mini-vue: ${this.msg}`,
             // [
             //     h('p', {}, "我是p1"),

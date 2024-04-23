@@ -53,7 +53,14 @@ function mountElement(vnode: any, container: any) {
   let el = (vnode.el = document.createElement(type));
 
   for (const key in props) {
-    el.setAttribute(key, props[key]);
+    const isOn = (key: string) => /^on[A-Z]/.test(key); //判断是否以on开头并且第三个字母是大写的
+    if (isOn(key)) {
+      //绑定事件
+      const event = key.slice(2).toLowerCase();
+      el.addEventListener(event, props[key]);
+    } else {
+      el.setAttribute(key, props[key]);
+    }
   }
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
