@@ -14,7 +14,7 @@ export function createComponentInstance(vnode: any) {
     slots: {}, //存放组件的slots
     emit: (key: string) => {}, //emit调用函数
   };
-  component.emit = emit.bind(null,component);
+  component.emit = emit.bind(null, component);
   return component;
 }
 
@@ -23,7 +23,7 @@ export function setupComponent(instance: any) {
   //初始化组件的props
   initProps(instance, instance.vnode.props);
   //初始化组件的slots
-  initSlots(instance,instance.vnode.children)
+  initSlots(instance, instance.vnode.children);
   //初始化有状态的组件信息（组件的返回值，或者说是setup函数的返回值）
   setupStatefulComponent(instance);
 }
@@ -36,9 +36,12 @@ function setupStatefulComponent(instance: any) {
   const { setup } = component;
 
   if (setup) {
+    setCurrentInstance(instance);
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     }); //用shallowReadonly包裹props,实现只读功能
+    setCurrentInstance(null);
+
     handleSetupResult(instance, setupResult);
   }
 }
@@ -59,4 +62,12 @@ function finishComponentSetup(instance: any) {
   if (component.render) {
     instance.render = component.render;
   }
+}
+
+let currentInstance: any;
+export function getCurrentInstance() {
+  return currentInstance;
+}
+function setCurrentInstance(value: any) {
+  currentInstance = value;
 }
