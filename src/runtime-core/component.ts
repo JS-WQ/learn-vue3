@@ -1,4 +1,5 @@
 import { shallowReadonly } from "../reactivity/reactive";
+import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { PublicInstanceProxyHandlers } from "./componentPublicInstance";
 
@@ -9,7 +10,9 @@ export function createComponentInstance(vnode: any) {
     type: vnode.type, //如果是processComponent，此时的type就是component信息
     setupState: {}, //存放setup的返回值
     props: {}, //存放组件的props
+    emit: (key: string) => {}, //emit调用函数
   };
+  component.emit = emit.bind(null,component);
   return component;
 }
 
@@ -22,18 +25,21 @@ export function setupComponent(instance: any) {
   setupStatefulComponent(instance);
 }
 
-
 //初始化有状态的组件信息(setup的返回值)
 function setupStatefulComponent(instance: any) {
   instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers);
 
   const component = instance.type;
   const { setup } = component;
+
   if (setup) {
-    const setupResult = setup(shallowReadonly(instance.props)); //用shallowReadonly包裹props,实现只读功能
+    const setupResult = setup(shallowReadonly(instance.props), {
+      emit: instance.emit,
+    }); //用shallowReadonly包裹props,实现只读功能
     handleSetupResult(instance, setupResult);
   }
 }
+
 //处理setup函数返回值
 function handleSetupResult(instance: any, setupResult: any) {
   //setupResult的值如果是对象，那么就需要把这个值放入上下文中提供组件使用；
