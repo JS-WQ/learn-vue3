@@ -1,4 +1,5 @@
 import { isObj } from "../shared";
+import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 
 /**
@@ -10,9 +11,11 @@ export function render(vnode: any, container: any) {
 }
 
 function patch(vnode: any, container: any) {
-  if (isObj(vnode.type)) {
+  const { shapeFlag } = vnode;
+  //二进制“&”运算符可以判断是否属于
+  if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
     processComponent(vnode, container);
-  } else if (typeof vnode.type === "string") {
+  } else if (shapeFlag & ShapeFlags.ELEMENT) {
     processElement(vnode, container);
   }
 }
@@ -29,9 +32,9 @@ function mountComponent(vnode: any, container: any) {
   //初始化组件信息
   setupComponent(instance);
   //调用render,生成组件vnode
-  setupRenderEffect(instance,vnode, container);
+  setupRenderEffect(instance, vnode, container);
 }
-function setupRenderEffect(instance: any,vnode:any, container: any) {
+function setupRenderEffect(instance: any, vnode: any, container: any) {
   const subTree = instance.render.call(instance.proxy);
   patch(subTree, container);
   vnode.el = subTree.el;
@@ -46,15 +49,15 @@ function processElement(vnode: any, container: any) {
 }
 //创建element
 function mountElement(vnode: any, container: any) {
-  const { type, props, children } = vnode;
+  const { type, props, children, shapeFlag } = vnode;
   let el = (vnode.el = document.createElement(type));
 
   for (const key in props) {
     el.setAttribute(key, props[key]);
   }
-  if (typeof children === "string") {
+  if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
-  } else if (Array.isArray(children)) {
+  } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     //如果children是数组
     mountChildren(vnode, el);
   }
