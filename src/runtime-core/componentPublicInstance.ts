@@ -2,6 +2,7 @@ import { hasOwn } from "../shared";
 
 const publicPropertiesMap = {
   $el: (instance: any) => instance.vnode.el,
+  $slots: (instance: any) => instance.slots,
 };
 
 export const PublicInstanceProxyHandlers = {
@@ -9,7 +10,7 @@ export const PublicInstanceProxyHandlers = {
     const { setupState, props } = instance;
 
     if (hasOwn(setupState, key)) {
-        //如果key值存在在state中，则返回state[key]
+      //如果key值存在在state中，则返回state[key]
       return setupState[key];
     } else if (hasOwn(props, key)) {
       //如果key值存在在props中，则返回props[key]
