@@ -1,15 +1,21 @@
-import { render } from "./renderer";
 import { createVNode } from "./vnode";
 
-export function createApp(rootComponent: any) {
-  return {
-    mount(rootContainer: any) {
-      //此时所有的操作都是基于vnode,所有需要先转换成vnode
-      const vnode = createVNode(rootComponent);
-      render(vnode, rootContainer, null);
-    },
+export function createAppAPI(render: Function) {
+  return function createApp(rootComponent: any) {
+    return {
+      mount(rootContainer: any) {
+        //此时所有的操作都是基于vnode,所有需要先转换成vnode
+        const vnode = createVNode(rootComponent);
+        render(vnode, rootContainer, null);
+      },
+    };
   };
 }
+
+/****
+ * 使用createAppAPI是基于自定义渲染的需求来处理的：通过runtime-dom中的index.ts自定义的渲染函数来完成
+ */
+
 /**
  * vue初始化函数基本调用路线：
  * 1. createApp
