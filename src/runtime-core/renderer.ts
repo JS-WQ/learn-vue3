@@ -1,6 +1,7 @@
 import { isObj } from "../shared";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { Text } from "./vnode";
 
 /**
  * vnode:虚拟节点
@@ -11,12 +12,25 @@ export function render(vnode: any, container: any) {
 }
 
 function patch(vnode: any, container: any) {
-  const { shapeFlag } = vnode;
-  //二进制“&”运算符可以判断是否属于
-  if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    processComponent(vnode, container);
-  } else if (shapeFlag & ShapeFlags.ELEMENT) {
-    processElement(vnode, container);
+  const { shapeFlag, type } = vnode;
+
+  switch (type) {
+    case "Fragment":
+      //此时不会渲染标签节点，只会渲染children节点
+      processFragment(vnode, container);
+      break;
+    case Text:
+      //渲染文本节点：当children数组中包含文本节点的时候
+      processText(vnode, container);
+      break;
+    default:
+      //二进制“&”运算符可以判断是否属于
+      if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        processComponent(vnode, container);
+      } else if (shapeFlag & ShapeFlags.ELEMENT) {
+        processElement(vnode, container);
+      }
+      break;
   }
 }
 
@@ -78,3 +92,14 @@ function mountChildren(vnode: any, container: any) {
 }
 //更新element
 function patchElement() {}
+
+// ====处理type为Fragment时只渲染children的情况======
+function processFragment(vnode: any, container: any) {
+  mountChildren(vnode, container);
+}
+// ==== 处理type为Text的时候（children数组中有文本节点）===
+function processText(vnode: any, container: any) {
+  const { children } = vnode;
+  const textNode = (vnode.el = document.createTextNode(children));
+  container.append(textNode);
+}
