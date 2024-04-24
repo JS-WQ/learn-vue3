@@ -10,7 +10,7 @@ export function createVNode(type: any, props?: any, children?: any) {
     props,
     children,
     el: null,
-    key: props && props.key,
+    key: props?.key,
     shapeFlag: getShapeFlag(type), //获取vnode的类型
   };
   //设置children的类型:数组或字符串

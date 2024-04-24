@@ -276,7 +276,54 @@ export function createRenderer(options: any) {
         i++;
       }
     } else {
-      //5.乱序节点
+      //5.乱序节点,中间对比
+      let s1 = i;
+      let s2 = i;
+      const toBePatched = e2 - s2 + 1; //新节点上总共需要处理的数量
+      let patched = 0; //新节点已经处理完的数量
+      //如果patched等于toBePatched的时候，说明新节点都已经处理完成，没有处理完的旧节点都可以删除
+      const keyToNewIndexMap = new Map(); //新节点上的关键字key和当前的下标
+      for (let index = s2; index <= e2; index++) {
+        //遍历新节点
+        const newChild = newChildren[index];
+        keyToNewIndexMap.set(newChild.key, index);
+      }
+
+      for (let index = s1; index <= e1; index++) {
+        //遍历旧节点
+        const oldChild = oldChildren[index];
+        if (patched >= toBePatched) {
+          hostRmove(oldChild.el);
+          continue;
+        }
+        let newIndex;
+        if (oldChild.key !== null && oldChild.key !== undefined) {
+          //当key值存在的时候
+          newIndex = keyToNewIndexMap.get(oldChild.key);
+        } else {
+          //当key值不存在的时候
+          for (let j = s2; j <= e2; j++) {
+            if (isSameVnodeType(oldChild, newChildren[j])) {
+              newIndex = j;
+              break;
+            }
+          }
+        }
+        if (newIndex === undefined) {
+          //该节点不存在新的节点中，需要删除
+          hostRmove(oldChild.el);
+        } else {
+          //该节点存在于新节点中
+          patch(
+            oldChild,
+            newChildren[newIndex],
+            container,
+            parentComponent,
+            anchor
+          );
+          patched++;
+        }
+      }
     }
   }
 

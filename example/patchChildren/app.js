@@ -14,10 +14,10 @@ export const App = {
             {tId:1},
             [
                 h("p",{},"主页"),
-                h(TextToArrayy),
+                // h(TextToArrayy),
                 // h(ArrayToText),
                 // h(TextToTex),
-                // h(ArrayToArray)
+                h(ArrayToArray)
             ]
         )
     },
