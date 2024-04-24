@@ -10,6 +10,8 @@ export function createRenderer(options: any) {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
     insert: hostInsert,
+    remove: hostRmove,
+    setElementText: hostSetElementText,
   } = options;
 
   //vnode:虚拟节点;container:真实挂载节点
@@ -115,14 +117,14 @@ export function createRenderer(options: any) {
       el.textContent = children;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       //如果children是数组
-      mountChildren(vnode, el, parentComponent);
+      mountChildren(vnode.children, el, parentComponent);
     }
     // container.append(el);
     hostInsert(el, container);
   }
 
-  function mountChildren(vnode: any, container: any, parentComponent: any) {
-    vnode.children.forEach((child: any) => {
+  function mountChildren(children: any, container: any, parentComponent: any) {
+    children.forEach((child: any) => {
       patch(null, child, container, parentComponent);
     });
   }
@@ -136,8 +138,45 @@ export function createRenderer(options: any) {
     const el = (vnode.el = oldVnode.el);
     const oldProps = oldVnode.props || {};
     const newProps = vnode.props || {};
+    //更新children
+    patchChildren(el, oldVnode, vnode, parentComponent);
     //更新props
     patchProps(el, oldProps, newProps);
+  }
+
+  function unmountedChildren(children: any[]) {
+    for (let index = 0; index < children.length; index++) {
+      let el = children[index].el;
+      hostRmove(el);
+    }
+  }
+
+  //更新children，对比新旧节点
+  function patchChildren(
+    container: any,
+    oldVnode: any,
+    vnode: any,
+    parentComponent: any
+  ) {
+    const oldShapFlag = oldVnode.shapeFlag;
+    const newShapFlag = vnode.shapeFlag;
+    if (newShapFlag & ShapeFlags.TEXT_CHILDREN) {
+      //如果新节点是文本:老节点是文本或者数组
+      if (oldShapFlag & ShapeFlags.ARRAY_CHILDREN) {
+        //如果老节点是数组：直接删除老节点，设置文本
+        unmountedChildren(oldVnode.children);
+      }
+      if (oldVnode.children !== vnode.children) {
+        hostSetElementText(container, vnode.children);
+      }
+    } else if (newShapFlag & ShapeFlags.ARRAY_CHILDREN) {
+      //如果新节点是数组：
+      if (oldShapFlag & ShapeFlags.TEXT_CHILDREN) {
+        //如果老节点是文本：删除文本，把数组mount到节点上
+        hostSetElementText(container, "");
+        mountChildren(vnode.children, container, parentComponent);
+      }
+    }
   }
 
   //更新element props
@@ -167,7 +206,7 @@ export function createRenderer(options: any) {
     container: any,
     parentComponent: any
   ) {
-    mountChildren(vnode, container, parentComponent);
+    mountChildren(vnode.children, container, parentComponent);
   }
   // ==== 处理type为Text的时候（children数组中有文本节点）===
   function processText(oldVnode: any, vnode: any, container: any) {
