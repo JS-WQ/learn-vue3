@@ -1,7 +1,7 @@
 import { isObj } from "../shared";
 import { ShapeFlags } from "../shared/ShapeFlags";
 
-export const Text = Symbol('text')
+export const Text = Symbol("text");
 
 export function createVNode(type: any, props?: any, children?: any) {
   //在初始化createApp的时候，type就等于rootComponent
@@ -10,6 +10,7 @@ export function createVNode(type: any, props?: any, children?: any) {
     props,
     children,
     el: null,
+    key: props && props.key,
     shapeFlag: getShapeFlag(type), //获取vnode的类型
   };
   //设置children的类型:数组或字符串

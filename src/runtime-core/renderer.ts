@@ -16,21 +16,22 @@ export function createRenderer(options: any) {
 
   //vnode:虚拟节点;container:真实挂载节点
   function render(vnode: any, container: any, parentComponent: any) {
-    patch(null, vnode, container, parentComponent);
+    patch(null, vnode, container, parentComponent, null);
   }
 
   function patch(
     oldVnode: any,
     vnode: any,
     container: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
     const { shapeFlag, type } = vnode;
 
     switch (type) {
       case "Fragment":
         //此时不会渲染标签节点，只会渲染children节点
-        processFragment(oldVnode, vnode, container, parentComponent);
+        processFragment(oldVnode, vnode, container, parentComponent, anchor);
         break;
       case Text:
         //渲染文本节点：当children数组中包含文本节点的时候
@@ -39,9 +40,9 @@ export function createRenderer(options: any) {
       default:
         //二进制“&”运算符可以判断是否属于
         if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-          processComponent(oldVnode, vnode, container, parentComponent);
+          processComponent(oldVnode, vnode, container, parentComponent, anchor);
         } else if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(oldVnode, vnode, container, parentComponent);
+          processElement(oldVnode, vnode, container, parentComponent, anchor);
         }
         break;
     }
@@ -53,27 +54,38 @@ export function createRenderer(options: any) {
     oldVnode: any,
     vnode: any,
     container: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
-    mountComponent(vnode, container, parentComponent);
+    mountComponent(vnode, container, parentComponent, anchor);
   }
   //创建组件
-  function mountComponent(vnode: any, container: any, parentComponent: any) {
+  function mountComponent(
+    vnode: any,
+    container: any,
+    parentComponent: any,
+    anchor: any
+  ) {
     //首先创建组件实例
     const instance = createComponentInstance(vnode, parentComponent);
     //初始化组件信息
     setupComponent(instance);
     //调用render,生成组件vnode
-    setupRenderEffect(instance, vnode, container);
+    setupRenderEffect(instance, vnode, container, anchor);
   }
-  function setupRenderEffect(instance: any, vnode: any, container: any) {
+  function setupRenderEffect(
+    instance: any,
+    vnode: any,
+    container: any,
+    anchor: any
+  ) {
     effect(() => {
       if (!instance.isMounted) {
         //组件初始化
         const subTree = (instance.subTree = instance.render.call(
           instance.proxy
         )); //保存组件的vnode
-        patch(null, subTree, container, instance);
+        patch(null, subTree, container, instance, anchor);
         vnode.el = subTree.el;
         instance.isMounted = true;
       } else {
@@ -83,7 +95,7 @@ export function createRenderer(options: any) {
         const prevSubTree = instance.subTree; //获取组件上一次的vnode
         instance.subTree = subTree;
 
-        patch(prevSubTree, subTree, container, instance);
+        patch(prevSubTree, subTree, container, instance, anchor);
         vnode.el = subTree.el;
       }
     });
@@ -97,16 +109,22 @@ export function createRenderer(options: any) {
     oldVnode: any,
     vnode: any,
     container: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
     if (!oldVnode) {
-      mountElement(vnode, container, parentComponent);
+      mountElement(vnode, container, parentComponent, anchor);
     } else {
-      patchElement(oldVnode, vnode, container, parentComponent);
+      patchElement(oldVnode, vnode, container, parentComponent, anchor);
     }
   }
   //创建element
-  function mountElement(vnode: any, container: any, parentComponent: any) {
+  function mountElement(
+    vnode: any,
+    container: any,
+    parentComponent: any,
+    anchor: any
+  ) {
     const { type, props, children, shapeFlag } = vnode;
     let el = (vnode.el = hostCreateElement(type));
 
@@ -117,15 +135,19 @@ export function createRenderer(options: any) {
       el.textContent = children;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
       //如果children是数组
-      mountChildren(vnode.children, el, parentComponent);
+      mountChildren(vnode.children, el, parentComponent, anchor);
     }
-    // container.append(el);
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   }
 
-  function mountChildren(children: any, container: any, parentComponent: any) {
+  function mountChildren(
+    children: any,
+    container: any,
+    parentComponent: any,
+    anchor: any
+  ) {
     children.forEach((child: any) => {
-      patch(null, child, container, parentComponent);
+      patch(null, child, container, parentComponent, anchor);
     });
   }
   //更新element
@@ -133,13 +155,14 @@ export function createRenderer(options: any) {
     oldVnode: any,
     vnode: any,
     container: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
     const el = (vnode.el = oldVnode.el);
     const oldProps = oldVnode.props || {};
     const newProps = vnode.props || {};
     //更新children
-    patchChildren(el, oldVnode, vnode, parentComponent);
+    patchChildren(el, oldVnode, vnode, parentComponent, anchor);
     //更新props
     patchProps(el, oldProps, newProps);
   }
@@ -156,7 +179,8 @@ export function createRenderer(options: any) {
     container: any,
     oldVnode: any,
     vnode: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
     const oldShapFlag = oldVnode.shapeFlag;
     const newShapFlag = vnode.shapeFlag;
@@ -174,8 +198,85 @@ export function createRenderer(options: any) {
       if (oldShapFlag & ShapeFlags.TEXT_CHILDREN) {
         //如果老节点是文本：删除文本，把数组mount到节点上
         hostSetElementText(container, "");
-        mountChildren(vnode.children, container, parentComponent);
+        mountChildren(vnode.children, container, parentComponent, anchor);
+      } else {
+        //老节点也是数组：双端对比diff算法
+        patchKeyedChildren(
+          oldVnode.children,
+          vnode.children,
+          container,
+          parentComponent,
+          anchor
+        );
       }
+    }
+  }
+
+  function patchKeyedChildren(
+    oldChildren: any,
+    newChildren: any,
+    container: any,
+    parentComponent: any,
+    anchor: any
+  ) {
+    let i = 0;
+    let e1 = oldChildren.length - 1;
+    let e2 = newChildren.length - 1;
+    function isSameVnodeType(oldVnode: any, newVnode: any) {
+      return oldVnode.type === newVnode.type && oldVnode.key === newVnode.key;
+    }
+
+    //1.首先进行左侧对比
+    while (i <= e1 && i <= e2) {
+      let oldChild = oldChildren[i];
+      let newChild = newChildren[i];
+
+      if (isSameVnodeType(oldChild, newChild)) {
+        //如果节点相同，那么可能继续对比节点的子节点
+        patch(oldChild, newChild, container, parentComponent, anchor);
+      } else {
+        break;
+      }
+      i++;
+    }
+    console.log(i);
+    //2.其次进行右侧对比
+    while (i <= e1 && i <= e2) {
+      let oldChild = oldChildren[e1];
+      let newChild = newChildren[e2];
+      if (isSameVnodeType(oldChild, newChild)) {
+        //如果节点相同，那么可能继续对比节点的子节点
+        patch(oldChild, newChild, container, parentComponent, anchor);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    console.log(e1, "e1");
+    console.log(e2, "e2");
+
+    //3.如果旧的节点全部都已经对比成功;并且还有新的节点没有对比，则直接新建节点
+    if (i > e1) {
+      //旧的节点已经全部完成对比成功
+      if (i <= e2) {
+        //还剩下一部分新的节点没有对比,直接新建节点
+        let nextPos = e2 + 1;
+        let anchor =
+          nextPos < newChildren.length ? newChildren[nextPos].el : null; //newChildren[nextPos].el保存的是oldChildren[]中的el
+        while (i <= e2) {
+          patch(null, newChildren[i], container, parentComponent, anchor);
+          i++;
+        }
+      }
+    } else if (i > e2) {
+      //4.新的节点比旧的节点少:新的节点都已经对比成功，还有老的节点存在，直接删除多余老的节点
+      while (i <= e1) {
+        hostRmove(oldChildren[i].el);
+        i++;
+      }
+    } else {
+      //5.乱序节点
     }
   }
 
@@ -204,9 +305,10 @@ export function createRenderer(options: any) {
     oldVnode: any,
     vnode: any,
     container: any,
-    parentComponent: any
+    parentComponent: any,
+    anchor: any
   ) {
-    mountChildren(vnode.children, container, parentComponent);
+    mountChildren(vnode.children, container, parentComponent, anchor);
   }
   // ==== 处理type为Text的时候（children数组中有文本节点）===
   function processText(oldVnode: any, vnode: any, container: any) {
